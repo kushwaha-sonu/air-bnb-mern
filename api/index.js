@@ -145,7 +145,7 @@ app.post('/api/upload-by-link', async (req, res) => {
         const newname = Date.now() + '.jpg';
         const savedImage = await imageDownloader.image({
             url: link,
-            dest: __dirname + '/uploads/' + newname,
+            dest: __dirname + '/temp/uploads/' + newname,
         });
 
         res.send({
