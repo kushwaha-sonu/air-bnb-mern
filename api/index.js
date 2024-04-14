@@ -26,7 +26,7 @@ const secret = bcryptjs.genSaltSync(10);
 
 
 // Set up static folder for uploaded images
-app.use('/api/upload-image', express.static(__dirname + '/uploads'));
+app.use('/api/upload-image', express.static(__dirname + '/temp/uploads'));
 
 function getUserDataFromReq(req){
     return new Promise((resolve, reject) => {
