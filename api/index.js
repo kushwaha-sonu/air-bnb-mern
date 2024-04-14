@@ -23,14 +23,14 @@ const mongoose = require('mongoose');
 
 // Secret for JWT and password hashing
 const secret = bcryptjs.genSaltSync(10);
-const jwtSecret = 'sfiguodrfgiyuyuitgdfrghuidfgihugdgfgyui';
+
 
 // Set up static folder for uploaded images
 app.use('/api/upload-image', express.static(__dirname + '/uploads'));
 
 function getUserDataFromReq(req){
     return new Promise((resolve, reject) => {
-        jwt.verify(req.cookies.token, jwtSecret, {}, async (err, cookieData) => {
+        jwt.verify(req.cookies.token, process.env.JWT_SECRET_KEY, {}, async (err, cookieData) => {
             if (err) {
                 throw err;
             } 
@@ -89,7 +89,7 @@ app.post('/api/login', async (req, res) => {
                     email: userFromDb.email,
                     id: userFromDb._id,
 
-                }, jwtSecret, {}, (err, token) => {
+                }, process.env.JWT_SECRET_KEY, {}, (err, token) => {
                     if (err) {
                         throw err;
                     }
@@ -113,7 +113,7 @@ app.get('/api/profile', (req, res) => {
     try {
         const { token } = req.cookies;
         if (token) {
-            jwt.verify(token, jwtSecret, {}, async (err, cookieData) => {
+            jwt.verify(token, process.env.JWT_SECRET_KEY, {}, async (err, cookieData) => {
                 if (err) {
                     throw err;
                 }
@@ -197,7 +197,7 @@ app.post('/api/places', (req, res) => {
         extraInfo, checkInTime, checkOutTime,
         maxGuest, description, price } = req.body;
 
-    jwt.verify(token, jwtSecret, {}, async (err, cookieData) => {
+    jwt.verify(token, process.env.JWT_SECRET_KEY, {}, async (err, cookieData) => {
         if (err) {
             throw err;
         }
@@ -249,7 +249,7 @@ app.put('/api/places', async (req, res) => {
         maxGuest, description, price } = req.body;
 
 
-    jwt.verify(token, jwtSecret, {}, async (err, cookieData) => {
+    jwt.verify(token, process.env.JWT_SECRET_KEY, {}, async (err, cookieData) => {
         const placeDoc = await Place.findById(id);
 
         if (err) {

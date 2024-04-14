@@ -7,7 +7,7 @@ export default function PlaceGallery({ place }) {
 
     if (showAllPhotos) {
         return (
-            <div className=" absolute inset-0 text-white top-28">
+            <div className=" relative inset-0 text-white -top-8">
                 <div className="bg-slate-800 rounded-2xl w-36 relative -right-8 text-center flex justify-center">
                     <button onClick={() => setShowAllPhotos(false)} className="flex gap-1 justify-center items-center p-2">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
@@ -16,8 +16,8 @@ export default function PlaceGallery({ place }) {
                         Close photos
                     </button>
                 </div>
-                <h2 className="text-3xl left-7 mt-3 font-semibold relative text-black">Photos of {place.title}</h2>
-                <div className="bg-white p-8 grid gap-4 grid-cols-2 mt-48">
+                <h2 className="text-3xl left-7 mt-3 font-semibold absolute text-black">Photos of {place.title}</h2>
+                <div className="bg-white p-8 grid gap-4 grid-cols-2 mt-8">
 
                     {place?.photos?.length > 0 && place.photos.map(photo => (
                         <div key={photo._id}>
@@ -37,20 +37,20 @@ export default function PlaceGallery({ place }) {
                 <div className="w-full h-full p-4">
                     {
                         place.photos?.[0] && (
-                            <Image onClick={() => setShowAllPhotos(true)} src={place.photos[0]} alt="" />
+                            <Image onClick={() => setShowAllPhotos(true)} src={place.photos[0]} alt=".." />
                         )
                     }
                 </div>
                 <div className="grid gap-3 p-4">
                     {
                         place.photos?.[1] && (
-                            <Image onClick={() => setShowAllPhotos(true)}  src={place.photos[1]} alt="" />
+                            <Image onClick={() => setShowAllPhotos(true)}  src={place.photos[1]} alt=".." />
                         )
                     }
                     <div className="relative">
                         {
                             place.photos?.[2] && (
-                                <Image onClick={() => setShowAllPhotos(true)}src={place.photos[2]} alt="" />
+                                <Image onClick={() => setShowAllPhotos(true)}src={place.photos[2]} alt=".." />
                             )
                         }
 
