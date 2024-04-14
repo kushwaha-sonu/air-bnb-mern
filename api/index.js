@@ -48,7 +48,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     credentials: true,
-    origin: 'http://localhost:5173',
+    origin: 'https://air-bnb-mern-v7a1.vercel.app/',
 }));
 
 // Connect to MongoDB
@@ -145,7 +145,7 @@ app.post('/api/upload-by-link', async (req, res) => {
         const newname = Date.now() + '.jpg';
         const savedImage = await imageDownloader.image({
             url: link,
-            dest: __dirname + '/uploads/' + newname,
+            dest: __dirname + '/temp/uploads/' + newname,
         });
 
         res.send({
@@ -163,7 +163,7 @@ app.post('/api/upload-by-link', async (req, res) => {
 
 // Multer middleware for image upload
 const photosMiddleware = multer({
-    dest: 'uploads',
+    dest: 'temp/uploads',
 });
 
 // Image upload route
