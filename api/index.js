@@ -48,7 +48,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     credentials: true,
-    origin: 'http://localhost:5173',
+    origin: 'https://air-bnb-mern-v7a1.vercel.app/',
 }));
 
 // Connect to MongoDB
