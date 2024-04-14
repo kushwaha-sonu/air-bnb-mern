@@ -163,7 +163,7 @@ app.post('/api/upload-by-link', async (req, res) => {
 
 // Multer middleware for image upload
 const photosMiddleware = multer({
-    dest: 'uploads',
+    dest: 'temp/uploads',
 });
 
 // Image upload route
