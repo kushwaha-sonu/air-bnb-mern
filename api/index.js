@@ -61,14 +61,20 @@ cloudinary.config({
 });
 
 
-mongoose.connect(process.env.MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-}).then(() => {
-    console.log('Connected to the database');
-}).catch((error) => {
-    console.error('MongoDB connection error:', error);
-});
+const connectDB = async () => {
+    try {
+        await mongoose.connect('mongodb://localhost/selfdb', {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log('Connected to MongoDB');
+    } catch (error) {
+        console.error('Error connecting to MongoDB:', error.message);
+    }
+};
+
+
+
 
 
 const storage = multer.diskStorage({
@@ -396,6 +402,8 @@ app.get('/api/bookings', async (req, res) => {
 
 
 // Start the server
-app.listen(4000, () => {
-    console.log('app is listening on 4000');
-});
+app.listen(4000,
+    async () => {
+        await connectDB();
+        console.log('app is listening on 4000');
+    });
