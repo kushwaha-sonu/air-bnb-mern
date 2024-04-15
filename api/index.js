@@ -30,12 +30,12 @@ const Booking = require('./modals/Booking');
 const secret = bcryptjs.genSaltSync(10);
 
 
-function getUserDataFromReq(req){
+function getUserDataFromReq(req) {
     return new Promise((resolve, reject) => {
         jwt.verify(req.cookies.token, process.env.JWT_SECRET_KEY, {}, async (err, cookieData) => {
             if (err) {
                 throw err;
-            } 
+            }
 
             resolve(cookieData);
         })
@@ -61,11 +61,14 @@ cloudinary.config({
 });
 
 
-async function connect() {
-    await mongoose.connect(process.env.MONGO_URL);
-}
-
-connect();
+mongoose.connect(process.env.MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}).then(() => {
+    console.log('Connected to the database');
+}).catch((error) => {
+    console.error('MongoDB connection error:', error);
+});
 
 
 const storage = multer.diskStorage({
@@ -195,7 +198,7 @@ const upload = multer({
 
 // Image upload route
 app.post('/api/upload-image', async (req, res) => {
-    
+
     // Removed upload.single() from route handler
     try {
         upload(req, res, async function (err) {
@@ -225,9 +228,9 @@ app.post('/api/upload-image', async (req, res) => {
 
                 // console.log("path: " + path);
                 // console.log("file path->" + newPath);
-                
+
                 // Assuming cloudinary is properly configured elsewhere
-                const cloudinaryResponse = await cloudinary.uploader.upload(newPath,{folder:'upload-from-device'});
+                const cloudinaryResponse = await cloudinary.uploader.upload(newPath, { folder: 'upload-from-device' });
                 // console.log('Uploaded to Cloudinary:', cloudinaryResponse);
                 cloudinaryResponses.push(cloudinaryResponse.secure_url); // Store Cloudinary response
 
@@ -355,7 +358,7 @@ app.get('/api/home-places', async (req, res) => {
 
 
 app.post('/api/bookings', async (req, res) => {
-    const userData=await getUserDataFromReq(req);
+    const userData = await getUserDataFromReq(req);
     try {
         const data = await req.body;
         const bookingDoc = await Booking.create({
@@ -385,9 +388,9 @@ app.post('/api/bookings', async (req, res) => {
 
 app.get('/api/bookings', async (req, res) => {
     const { token } = req.cookies;
-    const userData=await getUserDataFromReq(req);
+    const userData = await getUserDataFromReq(req);
 
-    res.json(await Booking.find({user:userData.id}).populate('place'));
+    res.json(await Booking.find({ user: userData.id }).populate('place'));
 
 })
 
