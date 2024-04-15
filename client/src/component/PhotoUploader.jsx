@@ -10,13 +10,13 @@ export const PhotoUploader = ({ addPhotos, onChange }) => {
         e.preventDefault();
 
         try {
-            const { data } = await axios.post('/api/upload-by-link', {
+            const { data:{imageUrl} } = await axios.post('/api/upload-by-link', {
                 link: photoLink,
             });
-            const fileName = data.image;
-            // console.log(fileName);
+            const fileName =imageUrl ;
+            // console.log(imageUrl);
             onChange((prev) => {
-                return [...prev, fileName];
+                return [...prev,fileName];
             })
             setPhotoLink('');
 
@@ -39,10 +39,10 @@ export const PhotoUploader = ({ addPhotos, onChange }) => {
         axios.post('/api/upload-image', data, {
             headers: { 'Content-type': 'multipart/form-data' }
         }).then(response => {
-            const { data: filenames } = response;
-            // console.log(filenames)
+            const { data: {cloudinaryResponses} } = response;
+            // console.log(cloudinaryResponses)
             onChange((prev) => {
-                return [...prev, ...filenames];
+                return [...prev, ...cloudinaryResponses];
             })
         })
 
@@ -90,7 +90,7 @@ export const PhotoUploader = ({ addPhotos, onChange }) => {
                     addPhotos.length > 0 && addPhotos.map(imageAdd => (
 
                         <div className=" w-full h-ful relative" key={imageAdd} >
-                            <img src={'http://localhost:4000/api/upload-image/' + imageAdd} alt="image" className="w-full h-40 object-cover rounded-md p-1" />
+                            <img src={imageAdd} alt="image" className="w-full h-40 object-cover rounded-md p-1" />
                             <button
                                 onClick={ev => removePhoto(ev,imageAdd)}
                                 className="absolute bottom-2 right-2 text-white bg-slate-800 p-2 bg-opacity-60 rounded-full hover:bg-red-600 cursor-pointer">
