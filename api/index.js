@@ -15,7 +15,7 @@ const imageDownloader = require('image-downloader');
 
 // Import JSON Web Token and bcrypt
 const jwt = require('jsonwebtoken');
-const bcryptjs = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
@@ -27,7 +27,7 @@ const Booking = require('./modals/Booking');
 
 
 // Secret for JWT and password hashing
-const secret = bcryptjs.genSaltSync(10);
+const secret = bcrypt.genSaltSync(10);
 
 
 function getUserDataFromReq(req) {
@@ -104,14 +104,26 @@ app.post('/api/register', async (req, res) => {
     const { name, email, password } = req.body;
 
     try {
-        const user = await User.create({
+        // Check if the user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ error: 'User already exists' });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create a new user
+        const newUser = await User.create({
             name,
             email,
-            password: bcryptjs.hashSync(password, secret),
+            password: hashedPassword,
         });
-        res.json(user);
-    } catch (e) {
-        res.status(422).json(e);
+
+        res.status(201).json(newUser);
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 
 });
@@ -123,26 +135,26 @@ app.post('/api/login', async (req, res) => {
     try {
         const userFromDb = await User.findOne({ email });
         if (userFromDb) {
-            const passOk = bcryptjs.compareSync(password, userFromDb.password);
+            const passOk = bcrypt.compareSync(password, userFromDb.password);
             if (passOk) {
                 jwt.sign({
                     email: userFromDb.email,
                     id: userFromDb._id,
 
-                }, process.env.JWT_SECRET_KEY, {}, (err, token) => {
+                }, process.env.JWT_SECRET_KEY, {expiresIn: '1h' }, (err, token) => {
                     if (err) {
                         throw err;
                     }
-                    res.cookie('token', token).json(userFromDb);
+                    res.cookie('token', token,{ httpOnly: true }).json(userFromDb);
                 });
             } else {
-                res.status(422).json('pass not ok');
+                res.status(401).json({ error: 'Invalid password' });
             }
         } else {
-            res.json('not ok');
+            res.status(404).json({ error: 'User not found' });
         }
     } catch (e) {
-        res.status(422).json(e);
+        res.status(500).json({ error: 'Internal server error' });
     }
 
 });
@@ -172,9 +184,11 @@ app.get('/api/profile', (req, res) => {
 // Logout route
 app.post('/api/logout', (req, res) => {
     try {
-        res.cookie('token', '').json(true);
-    } catch (e) {
-        res.json(e);
+        // Clear the token cookie by setting an empty value and maxAge to 0
+        res.clearCookie('token').json({ success: true });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -183,7 +197,7 @@ app.post('/api/upload-by-link', async (req, res) => {
     try {
         const { link } = req.body;
         const result = await cloudinary.uploader.upload(link, { folder: 'upload-image-by-link' });// Specify your desired folder in Cloudinary
-        console.log(result)
+        
         res.send({
             imageUrl: result.secure_url,
             message: 'Successfully uploaded to Cloudinary',
@@ -292,7 +306,7 @@ app.post('/api/places', (req, res) => {
 app.get('/api/places', (req, res) => {
     const { token } = req.cookies;
 
-    jwt.verify(token, jwtSecret, {}, async (err, cookieData) => {
+    jwt.verify(token, process.env.JWT_SECRET_KEY, {}, async (err, cookieData) => {
         if (err) {
             throw err;
         }
