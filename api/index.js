@@ -6,14 +6,12 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const multer = require('multer');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
 
-// Import models
-const Place = require('./modals/Place');
-const User = require('./modals/User');
-const Booking = require('./modals/Booking');
 
 // Import image downloader
 const imageDownloader = require('image-downloader');
+
 
 // Import JSON Web Token and bcrypt
 const jwt = require('jsonwebtoken');
@@ -21,12 +19,16 @@ const bcryptjs = require('bcryptjs');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
+// Import models
+const Place = require('./modals/Place');
+const User = require('./modals/User');
+const Booking = require('./modals/Booking');
+
+
+
 // Secret for JWT and password hashing
 const secret = bcryptjs.genSaltSync(10);
 
-
-// Set up static folder for uploaded images
-app.use('/api/upload-image', express.static(__dirname + '/temp/uploads'));
 
 function getUserDataFromReq(req){
     return new Promise((resolve, reject) => {
@@ -52,7 +54,36 @@ app.use(cors({
 }));
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URL);
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+
+async function connect() {
+    await mongoose.connect(process.env.MONGO_URL);
+}
+
+connect();
+
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        // Create the destination directory if it doesn't exist
+        const dest = './temp/uploads';
+        require('fs').mkdir(dest, { recursive: true }, (err) => {
+            if (err) {
+                cb(err, dest);
+            } else {
+                cb(null, dest);
+            }
+        });
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname);
+    }
+});
 
 // Test route
 app.get('/api/test', (req, res) => {
@@ -142,50 +173,79 @@ app.post('/api/logout', (req, res) => {
 app.post('/api/upload-by-link', async (req, res) => {
     try {
         const { link } = req.body;
-        const newname = Date.now() + '.jpg';
-        const savedImage = await imageDownloader.image({
-            url: link,
-            dest: __dirname + '/temp/uploads/' + newname,
-        });
-
+        const result = await cloudinary.uploader.upload(link, { folder: 'upload-image-by-link' });// Specify your desired folder in Cloudinary
+        console.log(result)
         res.send({
-            image: newname,
-            message: 'successfully uploaded',
+            imageUrl: result.secure_url,
+            message: 'Successfully uploaded to Cloudinary',
             status: 200,
         });
-    } catch (er) {
+    } catch (error) {
         res.send({
-            error: er.message,
-            message: 'error occurred',
+            error: error.message,
+            message: 'Error occurred while uploading to Cloudinary',
         });
     }
 });
 
 // Multer middleware for image upload
-const photosMiddleware = multer({
-    dest: 'temp/uploads',
-});
+const upload = multer({
+    storage: storage
+}).array("photos");
 
 // Image upload route
-app.post('/api/upload-image', photosMiddleware.array('photos', 100), async (req, res) => {
+app.post('/api/upload-image', async (req, res) => {
+    
+    // Removed upload.single() from route handler
     try {
-        const uploadedFiles = [];
-        for (let i = 0; i < req.files.length; i++) {
-            const { path, originalname } = req.files[i];
-            const parts = originalname.split('.');
-            const ext = parts[parts.length - 1];
-            const newPath = path + '.' + ext;
-            fs.renameSync(path, newPath);
-            uploadedFiles.push(newPath.replace('uploads\\', ''));
-        }
-        console.log(uploadedFiles);
+        upload(req, res, async function (err) {
+            if (err instanceof multer.MulterError) {
+                // A Multer error occurred when uploading
+                return res.status(400).json({
+                    message: err.message,
+                    success: false
+                });
+            } else if (err) {
+                // An unknown error occurred when uploading
+                return res.status(500).json({
+                    message: err.message,
+                    success: false
+                });
+            }
 
-        res.json(uploadedFiles);
+            const uploadedFiles = [];
+            const cloudinaryResponses = [];
+            for (let i = 0; i < req.files.length; i++) {
+                const { path, originalname } = req.files[i];
+                const parts = originalname.split('.');
+                const ext = parts[parts.length - 1];
+                const newPath = path + '.' + ext;
+                fs.renameSync(path, newPath);
+                uploadedFiles.push(newPath.replace('temp\\uploads\\', ''));
+
+                // console.log("path: " + path);
+                // console.log("file path->" + newPath);
+                
+                // Assuming cloudinary is properly configured elsewhere
+                const cloudinaryResponse = await cloudinary.uploader.upload(newPath,{folder:'upload-from-device'});
+                // console.log('Uploaded to Cloudinary:', cloudinaryResponse);
+                cloudinaryResponses.push(cloudinaryResponse.secure_url); // Store Cloudinary response
+
+                // Delete the temporarily saved file
+                fs.unlinkSync(newPath);
+            }
+
+            res.json({
+                message: "ok",
+                uploadedFiles: uploadedFiles,
+                cloudinaryResponses: cloudinaryResponses,
+                success: true
+            });
+        });
     } catch (error) {
-        console.log(error);
-        res.json({
+        res.status(500).json({
             message: error.message,
-            success: false,
+            success: false
         });
     }
 });
