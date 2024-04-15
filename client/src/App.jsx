@@ -17,7 +17,8 @@ import HomePlacePage from "./pages/HomePlacePage.jsx";
 import MyBookingPage from "./pages/MyBookingPage.jsx";
 import SingleBookingPage from "./pages/SingleBookingPage.jsx";
 
-axios.defaults.baseURL = "https://air-bnb-mern.vercel.app/"
+const baseURL = "https://air-bnb-mern-v7a1.vercel.app/";
+axios.defaults.baseURL = baseURL;
 axios.defaults.withCredentials = true;
 
 function App() {
