@@ -53,6 +53,14 @@ app.use(cors({
     origin: 'https://air-bnb-mern-v7a1.vercel.app',
 }));
 
+app.use((req, res, next) => {
+    res.setTimeout(60000, () => {
+        console.log('Request has timed out.');
+        res.status(504).send('Request timed out.');
+    });
+    next();
+});
+
 // Connect to MongoDB
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
