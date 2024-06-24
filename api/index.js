@@ -50,7 +50,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     credentials: true,
-    origin: 'https://sonu-booking-website.netlify.app',
+    origin: 'https://air-bnb-mern-fontend.onrender.com',
 }));
 
 app.use((req, res, next) => {
