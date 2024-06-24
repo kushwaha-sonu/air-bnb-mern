@@ -142,27 +142,29 @@ app.post('/api/login', async (req, res) => {
 
     try {
         const userFromDb = await User.findOne({ email });
-        if (userFromDb) {
-            const passOk = bcrypt.compareSync(password, userFromDb.password);
-            if (passOk) {
-                jwt.sign({
-                    email: userFromDb.email,
-                    id: userFromDb._id,
 
-                }, process.env.JWT_SECRET_KEY, {expiresIn: '1h' }, (err, token) => {
-                    if (err) {
-                        throw err;
-                    }
-                    res.cookie('token', token,{ httpOnly: true }).json(userFromDb);
-                });
-            } else {
-                res.status(401).json({ error: 'Invalid password' });
-            }
-        } else {
-            res.status(404).json({ error: 'User not found' });
+        if (!userFromDb) {
+            return res.status(404).json({ success: false, message: 'User not found' });
         }
-    } catch (e) {
-        res.status(500).json({ error: 'Internal server error' });
+
+        const passOk = bcrypt.compareSync(password, userFromDb.password);
+        if (!passOk) {
+            return res.status(401).json({ success: false, message: 'Invalid password' });
+        }
+
+        jwt.sign({
+            email: userFromDb.email,
+            id: userFromDb._id,
+        }, process.env.JWT_SECRET_TOKEN, {}, (err, token) => {
+            if (err) {
+                console.error('Error signing JWT token:', err);
+                return res.status(500).json({ success: false, error: 'Internal server error' });
+            }
+            res.cookie('token', token).json({ success: true, data: userFromDb });
+        });
+    } catch (error) {
+        console.error('Error during login:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
 
 });
